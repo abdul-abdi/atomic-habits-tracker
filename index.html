@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+    <!-- App Info -->
+    <title>Atomic Habits Tracker - Build Better Habits</title>
+    <meta name="description" content="An immersive, minimalist habit tracker based on James Clear's Atomic Habits. Build better habits with the four laws of behavior change." />
+    <meta name="keywords" content="habits, atomic habits, habit tracker, productivity, self-improvement, james clear" />
+    <meta name="author" content="Atomic Habits Tracker" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/vite.svg" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Atomic Habits" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Atomic Habits Tracker" />
+    <meta property="og:description" content="Build better habits with the four laws of behavior change" />
+    <meta property="og:image" content="/vite.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Atomic Habits Tracker" />
+    <meta property="twitter:description" content="Build better habits with the four laws of behavior change" />
+    <meta property="twitter:image" content="/vite.svg" />
+
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Prevent FOUC -->
+    <style>
+      body {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      body.loaded {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Loading Screen -->
+      <div id="initial-loading" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      ">
+        <div style="text-align: center;">
+          <div style="
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+          "></div>
+          <p style="
+            color: #64748b;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            margin: 0;
+          ">Loading Atomic Habits...</p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+
+    <!-- Remove loading screen and show body -->
+    <script>
+      window.addEventListener('load', () => {
+        document.body.classList.add('loaded');
+        const loadingScreen = document.getElementById('initial-loading');
+        if (loadingScreen) {
+          setTimeout(() => {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+              loadingScreen.remove();
+            }, 300);
+          }, 500);
+        }
+      });
+    </script>
+
+    <!-- CSS Animation for Loading Spinner -->
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </body>
+</html>
