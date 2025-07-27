@@ -1,17 +1,18 @@
 /**
- * Advanced Animation System using Anime.js
+ * Enhanced Animation System using Anime.js
  * Creates immersive, minimalist animations for the habit tracker
  */
 
-import { animate, timeline, stagger, scroll } from 'animejs';
+import { animate, stagger, Timeline, onScroll } from 'animejs';
 
 export class AnimationSystem {
   constructor() {
     this.activeAnimations = new Map();
     this.scrollObservers = new Map();
     this.defaultEasing = 'spring(1, 80, 10, 0)';
-    this.fastEasing = 'outExpo';
-    this.slowEasing = 'inOutQuart';
+    this.fastEasing = 'cubicBezier(0.25, 0.46, 0.45, 0.94)';
+    this.slowEasing = 'cubicBezier(0.55, 0.055, 0.675, 0.19)';
+    this.bounceEasing = 'cubicBezier(0.68, -0.55, 0.265, 1.55)';
     
     this.initializeGlobalAnimations();
   }
@@ -23,128 +24,217 @@ export class AnimationSystem {
     
     // Setup scroll-triggered animations
     this.setupScrollAnimations();
+    
+    // Setup parallax effects
+    this.setupParallaxEffects();
   }
 
-  // Page load animation sequence
+  // Enhanced page load animation sequence
   animatePageLoad() {
-    const tl = timeline({
+    const tl = new Timeline({
       autoplay: true,
-      duration: 2000
+      duration: 2500
     });
 
-    // Animate page elements in sequence
+    // Animate header with elegant entrance
     tl.add({
       targets: '.app-header',
-      translateY: [-50, 0],
+      translateY: [-30, 0],
       opacity: [0, 1],
-      duration: 800,
+      duration: 1000,
       ease: this.fastEasing
     })
     .add({
-      targets: '.habit-card',
+      targets: '.app-title',
       scale: [0.8, 1],
+      opacity: [0, 1],
+      duration: 800,
+      ease: this.bounceEasing
+    }, '-=600')
+    .add({
+      targets: '.view-toggle',
+      translateY: [20, 0],
       opacity: [0, 1],
       duration: 600,
       delay: stagger(100),
-      ease: this.defaultEasing
+      ease: this.fastEasing
     }, '-=400')
     .add({
+      targets: '.progress-dashboard',
+      translateY: [30, 0],
+      opacity: [0, 1],
+      scale: [0.95, 1],
+      duration: 800,
+      ease: this.defaultEasing
+    }, '-=300')
+    .add({
+      targets: '.habit-card',
+      translateY: [50, 0],
+      opacity: [0, 1],
+      scale: [0.9, 1],
+      duration: 700,
+      delay: stagger(120, { start: 200 }),
+      ease: this.defaultEasing
+    }, '-=500')
+    .add({
       targets: '.floating-action-btn',
-      scale: [0, 1],
+      scale: [0, 1.2, 1],
       rotate: [180, 0],
-      duration: 500,
-      ease: 'outBack'
-    }, '-=200');
+      duration: 600,
+      ease: this.bounceEasing
+    }, '-=300');
 
     this.activeAnimations.set('pageLoad', tl);
   }
 
-  // Habit completion animation
+  // Enhanced habit completion animation
   animateHabitCompletion(element, options = {}) {
     const {
       onComplete = () => {},
       showConfetti = true,
-      pulseIntensity = 1.2
+      pulseIntensity = 1.3
     } = options;
 
-    const tl = timeline({
+    const tl = new Timeline({
       complete: onComplete
     });
 
-    // Main completion animation
+    // Create ripple effect
+    const ripple = document.createElement('div');
+    ripple.className = 'completion-ripple';
+    ripple.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(46, 204, 113, 0.3);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+    `;
+    element.appendChild(ripple);
+
+    // Main completion animation with ripple
     tl.add({
       targets: element,
       scale: [1, pulseIntensity, 1],
-      duration: 400,
-      ease: 'outElastic'
+      duration: 500,
+      ease: this.bounceEasing
     })
+    .add({
+      targets: ripple,
+      width: [0, 200],
+      height: [0, 200],
+      opacity: [1, 0],
+      duration: 600,
+      ease: 'outQuart'
+    }, '-=400')
     .add({
       targets: element.querySelector('.habit-check'),
       rotate: [0, 360],
-      scale: [0, 1.2, 1],
-      duration: 600,
-      ease: this.defaultEasing
-    }, '-=200')
+      scale: [0, 1.3, 1],
+      duration: 700,
+      ease: this.bounceEasing
+    }, '-=300')
     .add({
       targets: element.querySelector('.habit-progress'),
       width: '100%',
-      duration: 800,
+      duration: 1000,
       ease: this.slowEasing
-    }, '-=400');
+    }, '-=500')
+    .add({
+      targets: element.querySelector('.progress-fill'),
+      background: [
+        'linear-gradient(90deg, #667eea, #764ba2)',
+        'linear-gradient(90deg, #2ecc71, #27ae60)',
+        'linear-gradient(90deg, #667eea, #764ba2)'
+      ],
+      duration: 1200,
+      ease: 'easeInOutSine'
+    }, '-=1000');
+
+    // Streak counter animation with number counting
+    const streakElement = element.querySelector('.streak-counter');
+    if (streakElement) {
+      const oldValue = parseInt(streakElement.textContent);
+      const newValue = oldValue + 1;
+      
+      tl.add({
+        targets: streakElement,
+        scale: [1, 1.4, 1],
+        color: ['#666', '#2ecc71', '#666'],
+        duration: 600,
+        ease: this.bounceEasing,
+        update: function(anim) {
+          const currentValue = Math.round(oldValue + (newValue - oldValue) * anim.progress);
+          streakElement.textContent = currentValue;
+        }
+      }, '-=400');
+    }
 
     // Confetti effect
     if (showConfetti) {
-      this.createConfettiEffect(element);
+      this.createEnhancedConfettiEffect(element);
     }
 
-    // Streak counter animation
-    const streakElement = element.querySelector('.streak-counter');
-    if (streakElement) {
-      tl.add({
-        targets: streakElement,
-        scale: [1, 1.3, 1],
-        color: ['#666', '#ff6b6b', '#666'],
-        duration: 500,
-        ease: 'outBounce'
-      }, '-=300');
-    }
+    // Cleanup ripple
+    setTimeout(() => ripple.remove(), 600);
 
     return tl;
   }
 
-  // Create confetti particle effect
-  createConfettiEffect(element) {
+  // Enhanced confetti effect
+  createEnhancedConfettiEffect(element) {
     const rect = element.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
-    // Create confetti particles
+    // Create different types of confetti
+    const confettiTypes = [
+      { shape: 'circle', color: '#2ecc71' },
+      { shape: 'square', color: '#3498db' },
+      { shape: 'triangle', color: '#e74c3c' },
+      { shape: 'star', color: '#f39c12' }
+    ];
+
     const particles = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 25; i++) {
       const particle = document.createElement('div');
+      const type = confettiTypes[i % confettiTypes.length];
+      
       particle.className = 'confetti-particle';
       particle.style.cssText = `
         position: fixed;
-        width: 8px;
-        height: 8px;
-        background: hsl(${Math.random() * 360}, 70%, 60%);
-        border-radius: 50%;
+        width: ${8 + Math.random() * 4}px;
+        height: ${8 + Math.random() * 4}px;
+        background: ${type.color};
+        border-radius: ${type.shape === 'circle' ? '50%' : '0'};
         pointer-events: none;
         z-index: 1000;
         left: ${centerX}px;
         top: ${centerY}px;
+        transform: rotate(${Math.random() * 360}deg);
       `;
+      
+      if (type.shape === 'triangle') {
+        particle.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+      } else if (type.shape === 'star') {
+        particle.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
+      }
+      
       document.body.appendChild(particle);
       particles.push(particle);
     }
 
-    // Animate particles
+    // Animate particles with physics
     animate(particles, {
-      translateX: () => (Math.random() - 0.5) * 200,
-      translateY: () => -Math.random() * 150 - 50,
+      translateX: () => (Math.random() - 0.5) * 300,
+      translateY: () => -Math.random() * 200 - 100,
       scale: [1, 0],
       rotate: () => Math.random() * 720,
-      duration: 1500,
+      duration: 2000,
       delay: stagger(50),
       ease: 'outQuart',
       complete: () => {
@@ -153,168 +243,216 @@ export class AnimationSystem {
     });
   }
 
-  // Streak milestone animation
+  // Enhanced streak milestone animation
   animateStreakMilestone(element, streakCount) {
     const colors = {
-      7: '#4ecdc4',   // Week
-      30: '#45b7d1',  // Month
-      100: '#f39c12', // 100 days
-      365: '#e74c3c'  // Year
+      7: { primary: '#4ecdc4', secondary: '#44a08d' },
+      30: { primary: '#45b7d1', secondary: '#96c93d' },
+      100: { primary: '#f39c12', secondary: '#e67e22' },
+      365: { primary: '#e74c3c', secondary: '#c0392b' }
     };
 
-    const milestoneColor = colors[streakCount] || '#95a5a6';
+    const milestoneColor = colors[streakCount] || { primary: '#95a5a6', secondary: '#7f8c8d' };
 
-    const tl = timeline();
+    const tl = new Timeline();
 
-    // Pulsing glow effect
+    // Create glowing border effect
+    element.style.boxShadow = `0 0 0 2px ${milestoneColor.primary}`;
+    
     tl.add({
       targets: element,
       boxShadow: [
-        '0 0 0 rgba(255,255,255,0)',
-        `0 0 30px ${milestoneColor}`,
-        '0 0 0 rgba(255,255,255,0)'
+        `0 0 0 2px ${milestoneColor.primary}`,
+        `0 0 30px ${milestoneColor.primary}, 0 0 60px ${milestoneColor.secondary}`,
+        `0 0 0 2px ${milestoneColor.primary}`
       ],
-      duration: 2000,
+      duration: 2500,
       ease: 'inOutSine',
-      loop: 3
+      loop: 2
     })
     .add({
       targets: element.querySelector('.streak-number'),
-      scale: [1, 1.5, 1],
-      color: ['#333', milestoneColor, '#333'],
-      duration: 1000,
-      ease: this.defaultEasing
-    }, '-=1500');
+      scale: [1, 1.6, 1],
+      color: ['#333', milestoneColor.primary, '#333'],
+      duration: 1200,
+      ease: this.bounceEasing
+    }, '-=2000');
 
-    // Create milestone badge
-    this.createMilestoneBadge(element, streakCount, milestoneColor);
+    // Create milestone badge with enhanced design
+    this.createEnhancedMilestoneBadge(element, streakCount, milestoneColor);
 
     return tl;
   }
 
-  // Create milestone achievement badge
-  createMilestoneBadge(element, streakCount, color) {
+  // Enhanced milestone badge
+  createEnhancedMilestoneBadge(element, streakCount, color) {
     const badge = document.createElement('div');
-    badge.className = 'milestone-badge';
-    badge.innerHTML = `🎉 ${streakCount} Day Streak!`;
+    badge.className = 'milestone-badge enhanced';
+    badge.innerHTML = `
+      <div class="badge-content">
+        <span class="badge-icon">🎉</span>
+        <span class="badge-text">${streakCount} Day Streak!</span>
+      </div>
+      <div class="badge-sparkles">
+        <span class="sparkle">✨</span>
+        <span class="sparkle">✨</span>
+        <span class="sparkle">✨</span>
+      </div>
+    `;
+    
     badge.style.cssText = `
       position: absolute;
-      top: -20px;
+      top: -30px;
       left: 50%;
       transform: translateX(-50%) scale(0);
-      background: ${color};
+      background: linear-gradient(135deg, ${color.primary}, ${color.secondary});
       color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 12px;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-size: 14px;
       font-weight: bold;
       white-space: nowrap;
       z-index: 100;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     `;
 
     element.style.position = 'relative';
     element.appendChild(badge);
 
-    // Animate badge appearance
+    // Animate badge appearance with sparkles
+    const badgeContent = badge.querySelector('.badge-content');
+    const sparkles = badge.querySelectorAll('.sparkle');
+    
     animate(badge, {
-      scale: [0, 1.1, 1],
-      translateY: [-10, 0],
+      scale: [0, 1.2, 1],
+      translateY: [-20, 0],
       duration: 800,
-      ease: 'outBack',
-      complete: () => {
-        setTimeout(() => {
-          animate(badge, {
-            opacity: [1, 0],
-            translateY: [0, -20],
-            duration: 500,
-            complete: () => badge.remove()
-          });
-        }, 3000);
-      }
+      ease: this.bounceEasing
     });
+
+    animate(sparkles, {
+      scale: [0, 1.5, 1],
+      rotate: [0, 360],
+      duration: 1000,
+      delay: stagger(100),
+      ease: this.bounceEasing
+    });
+
+    // Remove badge after delay
+    setTimeout(() => {
+      animate(badge, {
+        opacity: [1, 0],
+        translateY: [0, -30],
+        scale: [1, 0.8],
+        duration: 500,
+        complete: () => badge.remove()
+      });
+    }, 4000);
   }
 
-  // Habit card entrance animation
+  // Enhanced habit card entrance animation
   animateHabitCardEntrance(elements) {
     return animate(elements, {
-      translateY: [50, 0],
+      translateY: [60, 0],
       opacity: [0, 1],
-      scale: [0.9, 1],
-      duration: 600,
-      delay: stagger(100, { start: 200 }),
+      scale: [0.85, 1],
+      rotateX: [15, 0],
+      duration: 800,
+      delay: stagger(150, { start: 300 }),
       ease: this.defaultEasing
     });
   }
 
-  // Habit card exit animation
+  // Enhanced habit card exit animation
   animateHabitCardExit(element) {
     return animate(element, {
-      translateX: [-300, 0],
+      translateX: [-400, 0],
       opacity: [1, 0],
       scale: [1, 0.8],
-      duration: 400,
+      rotateY: [0, -15],
+      duration: 500,
       ease: this.fastEasing
     });
   }
 
-  // Progress bar animation
+  // Enhanced progress bar animation
   animateProgressBar(element, progress) {
     const progressBar = element.querySelector('.progress-fill');
     const progressText = element.querySelector('.progress-text');
 
-    const tl = timeline();
+    const tl = new Timeline();
 
     tl.add({
       targets: progressBar,
       width: `${progress}%`,
-      duration: 1000,
+      duration: 1200,
       ease: this.slowEasing
     })
     .add({
       targets: progressText,
       innerHTML: [0, Math.round(progress)],
-      duration: 1000,
+      duration: 1200,
       ease: 'linear',
       round: 1
-    }, '-=1000');
+    }, '-=1200')
+    .add({
+      targets: progressBar,
+      background: [
+        'linear-gradient(90deg, #667eea, #764ba2)',
+        'linear-gradient(90deg, #2ecc71, #27ae60)',
+        'linear-gradient(90deg, #667eea, #764ba2)'
+      ],
+      duration: 1500,
+      ease: 'easeInOutSine'
+    }, '-=1200');
 
     return tl;
   }
 
-  // Floating action button animations
+  // Enhanced floating action button animations
   animateFAB(element, action = 'pulse') {
     switch (action) {
       case 'pulse':
         return animate(element, {
-          scale: [1, 1.1, 1],
-          duration: 300,
-          ease: 'outQuad'
+          scale: [1, 1.15, 1],
+          rotate: [0, 5, -5, 0],
+          duration: 400,
+          ease: this.bounceEasing
         });
 
       case 'rotate':
         return animate(element, {
           rotate: '+=180',
-          duration: 400,
+          scale: [1, 1.1, 1],
+          duration: 500,
           ease: this.fastEasing
         });
 
       case 'bounce':
         return animate(element, {
-          translateY: [0, -10, 0],
+          translateY: [0, -15, 0],
+          scale: [1, 1.05, 1],
+          duration: 600,
+          ease: this.bounceEasing
+        });
+
+      case 'shake':
+        return animate(element, {
+          translateX: [0, -10, 10, -10, 10, 0],
           duration: 500,
-          ease: 'outBounce'
+          ease: 'easeInOutSine'
         });
     }
   }
 
-  // Setup scroll-triggered animations
+  // Enhanced scroll-triggered animations
   setupScrollAnimations() {
-    // Animate elements as they come into view
-    const scrollObserver = scroll({
+    const scrollObserver = onScroll({
       targets: '.animate-on-scroll',
-      translateY: [50, 0],
+      translateY: [60, 0],
       opacity: [0, 1],
-      duration: 800,
+      scale: [0.9, 1],
+      duration: 1000,
       ease: this.defaultEasing,
       onEnter: (el) => {
         el.classList.add('animated');
@@ -324,37 +462,55 @@ export class AnimationSystem {
     this.scrollObservers.set('main', scrollObserver);
   }
 
-  // Morphing animation for habit categories
+  // Setup parallax effects
+  setupParallaxEffects() {
+    const parallaxElements = document.querySelectorAll('.parallax');
+    
+    window.addEventListener('scroll', () => {
+      const scrolled = window.pageYOffset;
+      
+      parallaxElements.forEach(element => {
+        const speed = element.dataset.speed || 0.5;
+        const yPos = -(scrolled * speed);
+        element.style.transform = `translateY(${yPos}px)`;
+      });
+    });
+  }
+
+  // Enhanced morphing animation for habit categories
   animateCategoryMorph(fromElement, toElement) {
-    const tl = timeline();
+    const tl = new Timeline();
 
     tl.add({
       targets: fromElement,
       scale: [1, 0],
       opacity: [1, 0],
-      duration: 300,
+      rotateY: [0, 90],
+      duration: 400,
       ease: this.fastEasing
     })
     .add({
       targets: toElement,
       scale: [0, 1],
       opacity: [0, 1],
-      duration: 400,
+      rotateY: [-90, 0],
+      duration: 500,
       ease: this.defaultEasing
-    }, '-=100');
+    }, '-=200');
 
     return tl;
   }
 
-  // Text animation for dynamic content
+  // Enhanced text animation for dynamic content
   animateTextChange(element, newText) {
-    const tl = timeline();
+    const tl = new Timeline();
 
     tl.add({
       targets: element,
-      translateY: [0, -20],
+      translateY: [0, -30],
       opacity: [1, 0],
-      duration: 200,
+      scale: [1, 0.8],
+      duration: 300,
       ease: this.fastEasing,
       complete: () => {
         element.textContent = newText;
@@ -362,26 +518,81 @@ export class AnimationSystem {
     })
     .add({
       targets: element,
-      translateY: [20, 0],
+      translateY: [30, 0],
       opacity: [0, 1],
-      duration: 300,
-      ease: this.defaultEasing
+      scale: [0.8, 1],
+      duration: 400,
+      ease: this.bounceEasing
     });
 
     return tl;
   }
 
-  // Loading animation
+  // Enhanced loading animation
   createLoadingAnimation(element) {
     const dots = element.querySelectorAll('.loading-dot');
     
     return animate(dots, {
-      scale: [1, 1.5, 1],
+      scale: [1, 1.8, 1],
       opacity: [0.3, 1, 0.3],
-      duration: 1000,
+      translateY: [0, -10, 0],
+      duration: 1200,
       delay: stagger(200),
       loop: true,
       ease: 'inOutSine'
+    });
+  }
+
+  // Enhanced button press animation
+  animateButtonPress(element) {
+    return animate(element, {
+      scale: [1, 0.95, 1],
+      duration: 200,
+      ease: 'easeInOutQuad'
+    });
+  }
+
+  // Enhanced modal entrance
+  animateModalEntrance(modal) {
+    const backdrop = modal.querySelector('.modal-backdrop') || modal;
+    const content = modal.querySelector('.modal-content') || modal;
+    
+    // Animate backdrop
+    animate(backdrop, {
+      opacity: [0, 1],
+      duration: 300,
+      ease: 'easeOutQuad'
+    });
+
+    // Animate content
+    return animate(content, {
+      scale: [0.8, 1],
+      opacity: [0, 1],
+      translateY: [50, 0],
+      duration: 400,
+      ease: this.bounceEasing
+    });
+  }
+
+  // Enhanced modal exit
+  animateModalExit(modal) {
+    const backdrop = modal.querySelector('.modal-backdrop') || modal;
+    const content = modal.querySelector('.modal-content') || modal;
+    
+    // Animate content
+    animate(content, {
+      scale: [1, 0.8],
+      opacity: [1, 0],
+      translateY: [0, 50],
+      duration: 300,
+      ease: 'easeInQuad'
+    });
+
+    // Animate backdrop
+    return animate(backdrop, {
+      opacity: [1, 0],
+      duration: 300,
+      ease: 'easeInQuad'
     });
   }
 
